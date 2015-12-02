@@ -1,18 +1,22 @@
 package net.ianbox.LowCostSLAM.SLAM;
 
 import java.util.HashSet;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import net.ianbox.LowCostSLAM.data.Data;
 
 import org.apache.log4j.Logger;
 
-public class ParticleFilter implements Localizer, Runnable {
+public class ParticleFilter implements Localizer {
 
 	private static final Logger log = Logger.getLogger(ParticleFilter.class
 			.getName());
+	private final BlockingQueue<List<Particle>> dq = new LinkedBlockingQueue<List<Particle>>();;
 
 	void sense() {
 
@@ -71,7 +75,7 @@ public class ParticleFilter implements Localizer, Runnable {
 		Set<Particle> deduplicates = new HashSet<Particle>();
 		deduplicates.addAll(parts);
 		for (Particle p : deduplicates) {
-			p.weight /= totalWeight;
+			p = p.setWeight(p.weight / totalWeight);
 		}
 
 		return parts;
@@ -79,6 +83,15 @@ public class ParticleFilter implements Localizer, Runnable {
 
 	public void run() {
 		// TODO Auto-generated method stub
-		
+
+	}
+
+	public List<Particle> read() {
+		try {
+			return dq.take();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 }

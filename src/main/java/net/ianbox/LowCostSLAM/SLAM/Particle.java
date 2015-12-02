@@ -1,20 +1,24 @@
 package net.ianbox.LowCostSLAM.SLAM;
 
+import net.ianbox.LowCostSLAM.map.GeoPosition;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.log4j.Logger;
 
-
 public class Particle {
 
-	double weight = 1;
-//	GeoNode src = null;
-//	GeoNode dst = null;
-	double dist = 0;
-	Vector3D velocity;
-	private static final Logger log = Logger.getLogger(Particle.class
-			.getName());
-	
+	public final double weight;
+	public final GeoPosition pos;
+	public final Vector3D velocity;
+	private static final Logger log = Logger
+			.getLogger(Particle.class.getName());
+
+	public Particle(double w, GeoPosition p, Vector3D v) {
+		weight = w;
+		pos = p;
+		velocity = v;
+	}
+
 	void move() {
 
 	}
@@ -23,6 +27,8 @@ public class Particle {
 		return 0;
 	}
 
-
+	public Particle setWeight(double w) {
+		return new Particle(w, pos, velocity);
+	}
 
 }
