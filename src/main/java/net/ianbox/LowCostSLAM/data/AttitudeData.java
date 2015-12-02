@@ -1,9 +1,23 @@
 package net.ianbox.LowCostSLAM.data;
 
+import org.jdom2.Attribute;
+import org.jdom2.Element;
+import org.jdom2.filter.Filters;
+import org.jdom2.xpath.XPathExpression;
+
 public class AttitudeData extends Data {
 
 	public static final String NAME = "Attitude";
 	public static final String PATTERN = "^" + NAME + ":.+";
+
+	private static final XPathExpression<Attribute> Q0 = xFactory.compile(
+			"@Q0", Filters.attribute());
+	private static final XPathExpression<Attribute> Q1 = xFactory.compile(
+			"@Q1", Filters.attribute());
+	private static final XPathExpression<Attribute> Q2 = xFactory.compile(
+			"@Q2", Filters.attribute());
+	private static final XPathExpression<Attribute> Q3 = xFactory.compile(
+			"@Q3", Filters.attribute());
 
 	public final double q0;
 	public final double q1;
@@ -68,6 +82,33 @@ public class AttitudeData extends Data {
 				}
 			}
 
+		} catch (Exception e) {
+			e.printStackTrace();
+			_q0 = Double.NaN;
+			_q1 = Double.NaN;
+			_q2 = Double.NaN;
+			_q3 = Double.NaN;
+		}
+
+		q0 = _q0;
+		q1 = _q1;
+		q2 = _q2;
+		q3 = _q3;
+	}
+
+	public AttitudeData(Element data) {
+		super(data);
+
+		double _q0 = Double.NaN;
+		double _q1 = Double.NaN;
+		double _q2 = Double.NaN;
+		double _q3 = Double.NaN;
+
+		try {
+			_q0 = Q0.evaluateFirst(data).getDoubleValue();
+			_q1 = Q1.evaluateFirst(data).getDoubleValue();
+			_q2 = Q2.evaluateFirst(data).getDoubleValue();
+			_q3 = Q3.evaluateFirst(data).getDoubleValue();
 		} catch (Exception e) {
 			e.printStackTrace();
 			_q0 = Double.NaN;

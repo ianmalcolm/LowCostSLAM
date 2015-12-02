@@ -1,9 +1,17 @@
 package net.ianbox.LowCostSLAM.data;
 
+import org.jdom2.Attribute;
+import org.jdom2.Element;
+import org.jdom2.filter.Filters;
+import org.jdom2.xpath.XPathExpression;
+
 public class BaroData extends Data {
 
 	public static final String NAME = "Baro";
 	public static final String PATTERN = "^" + NAME + ":.+";
+
+	private static final XPathExpression<Attribute> PRESS = xFactory.compile(
+			"@Press", Filters.attribute());
 
 	public final double pressure;
 
@@ -31,6 +39,19 @@ public class BaroData extends Data {
 
 		pressure = b;
 
+	}
+
+	public BaroData(Element data) {
+		super(data);
+
+		double b = Double.NaN;
+		try {
+			b = PRESS.evaluateFirst(data).getDoubleValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+			b = Double.NaN;
+		}
+		pressure = b;
 	}
 
 	@Override

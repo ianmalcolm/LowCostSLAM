@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<SensorData version="1.0">
+	<Data Time="1448889351202" Sensor="Accelerate" AccX="0.1" AccY="0.2" AccZ="0.3" />
+	<Data Time="1448889351203" Sensor="GPS" Lat="1.302797" Lon="103.785574" Alt="4.0" AccHor="5.0" AccVer="5.0" Speed="10.0" />
+	<Data Time="1448889351204" Sensor="Attitude" Q0="0.182574186" Q1="0.365148372" Q2="0.547722558" Q3="0.730296743" />
+	<Data Time="1448889351205" Sensor="Accelerate" AccX="0.1" AccY="0.2" AccZ="0.3" />
+	<Data Time="1448889351206" Sensor="GPS" Lat="1.302797" Lon="103.785574" Alt="4.0" AccHor="5.0" AccVer="5.0" Speed="10.0" />
+	<Data Time="1448889351207" Sensor="Attitude" Q0="0.182574186" Q1="0.365148372" Q2="0.547722558" Q3="0.730296743" />
+	<Data Time="1448889351208" Sensor="Accelerate" AccX="0.1" AccY="0.2" AccZ="0.3" />
+	<Data Time="1448889351209" Sensor="GPS" Lat="1.302797" Lon="103.785574" Alt="4.0" AccHor="5.0" AccVer="5.0" Speed="10.0" />
+	<Data Time="1448889351210" Sensor="Attitude" Q0="0.182574186" Q1="0.365148372" Q2="0.547722558" Q3="0.730296743" />
+</SensorData>

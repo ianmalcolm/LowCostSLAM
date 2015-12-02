@@ -1,9 +1,21 @@
 package net.ianbox.LowCostSLAM.data;
 
+import org.jdom2.Attribute;
+import org.jdom2.Element;
+import org.jdom2.filter.Filters;
+import org.jdom2.xpath.XPathExpression;
+
 public class AccelerateData extends Data {
 
 	public static final String NAME = "Accelerate";
 	public static final String PATTERN = "^" + NAME + ":.+";
+
+	private static final XPathExpression<Attribute> ACCX = xFactory.compile(
+			"@AccX", Filters.attribute());
+	private static final XPathExpression<Attribute> ACCY = xFactory.compile(
+			"@AccY", Filters.attribute());
+	private static final XPathExpression<Attribute> ACCZ = xFactory.compile(
+			"@AccZ", Filters.attribute());
 
 	public final double accX;
 	public final double accY;
@@ -59,6 +71,28 @@ public class AccelerateData extends Data {
 			z = Double.NaN;
 		}
 
+		accX = x;
+		accY = y;
+		accZ = z;
+	}
+
+	public AccelerateData(Element data) {
+		super(data);
+
+		double x = Double.NaN;
+		double y = Double.NaN;
+		double z = Double.NaN;
+
+		try {
+			x = ACCX.evaluateFirst(data).getDoubleValue();
+			y = ACCY.evaluateFirst(data).getDoubleValue();
+			z = ACCZ.evaluateFirst(data).getDoubleValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+			x = Double.NaN;
+			y = Double.NaN;
+			z = Double.NaN;
+		}
 		accX = x;
 		accY = y;
 		accZ = z;

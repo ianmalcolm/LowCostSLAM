@@ -1,9 +1,27 @@
 package net.ianbox.LowCostSLAM.data;
 
+import org.jdom2.Attribute;
+import org.jdom2.Element;
+import org.jdom2.filter.Filters;
+import org.jdom2.xpath.XPathExpression;
+
 public class GPSData extends Data {
 
 	public static final String NAME = "GPS";
 	public static final String PATTERN = "^" + NAME + ":.+";
+
+	private static final XPathExpression<Attribute> LAT = xFactory.compile(
+			"@Lat", Filters.attribute());
+	private static final XPathExpression<Attribute> LON = xFactory.compile(
+			"@Lon", Filters.attribute());
+	private static final XPathExpression<Attribute> ALT = xFactory.compile(
+			"@Alt", Filters.attribute());
+	private static final XPathExpression<Attribute> ACCH = xFactory.compile(
+			"@AccHor", Filters.attribute());
+	private static final XPathExpression<Attribute> ACCV = xFactory.compile(
+			"@AccVer", Filters.attribute());
+	private static final XPathExpression<Attribute> SPEED = xFactory.compile(
+			"@Speed", Filters.attribute());
 
 	public final double lat;
 	public final double lon;
@@ -84,6 +102,47 @@ public class GPSData extends Data {
 			_lon = Double.NaN;
 			_alt = Double.NaN;
 			_accH = Double.NaN;
+			_accV = Double.NaN;
+			_speed = Double.NaN;
+		}
+
+		lat = _lat;
+		lon = _lon;
+		alt = _alt;
+		accH = _accH;
+		accV = _accV;
+		speed = _speed;
+	}
+
+	public GPSData(Element data) {
+		super(data);
+
+		double _lat = Double.NaN;
+		double _lon = Double.NaN;
+		double _alt = Double.NaN;
+		double _accH = Double.NaN;
+		double _accV = Double.NaN;
+		double _speed = Double.NaN;
+
+		try {
+
+			_lat = LAT.evaluateFirst(data).getDoubleValue();
+			_lon = LON.evaluateFirst(data).getDoubleValue();
+			_accH = ACCH.evaluateFirst(data).getDoubleValue();
+
+			Attribute attralt = ALT.evaluateFirst(data);
+			Attribute attraccV = ACCV.evaluateFirst(data);
+			Attribute attrspd = SPEED.evaluateFirst(data);
+
+			_alt = attralt != null ? attralt.getDoubleValue() : Double.NaN;
+			_accV = attraccV != null ? attraccV.getDoubleValue() : Double.NaN;
+			_speed = attrspd != null ? attrspd.getDoubleValue() : Double.NaN;
+		} catch (Exception e) {
+			e.printStackTrace();
+			_lat = Double.NaN;
+			_lon = Double.NaN;
+			_accH = Double.NaN;
+			_alt = Double.NaN;
 			_accV = Double.NaN;
 			_speed = Double.NaN;
 		}
