@@ -41,8 +41,8 @@ public class ParticleFilter implements Localizer {
 	 * @param ins
 	 * @return
 	 */
-	static List<? extends Weighted> resampling(List<? extends Weighted> ins,
-			int resamplingNumber) {
+	public static List<? extends Weighted> resampling(
+			List<? extends Weighted> ins, int resamplingNumber) {
 
 		assert ins.size() > 0;
 
@@ -77,7 +77,8 @@ public class ParticleFilter implements Localizer {
 	 * @param ins
 	 * @return
 	 */
-	static List<Weighted> normalize(List<Weighted> ins) {
+	public static List<? extends Weighted> normalize(
+			List<? extends Weighted> ins) {
 		assert ins.size() > 0;
 
 		double totalWeight = 0;
@@ -119,7 +120,7 @@ public class ParticleFilter implements Localizer {
 
 	public void proposeParticles(GHPoint gp, double accH, double accV, int num) {
 		parts = new LinkedList<Particle>();
-		List<WeightedEdge> welist = map.rangeSearch(gp, accH * 3);
+		List<? extends WeightedEdge> welist = map.rangeSearch(gp, accH * 3);
 		List<Particle> plist = new LinkedList<Particle>();
 
 		while (plist.size() < num) {
@@ -127,7 +128,7 @@ public class ParticleFilter implements Localizer {
 			List<WeightedEdge> tmplst = (List<WeightedEdge>) resampling(welist,
 					num - plist.size());
 			for (WeightedEdge we : tmplst) {
-				Particle p = new Particle(we.getEdge(), rand.nextDouble()
+				Particle p = new Particle(we, rand.nextDouble()
 						* we.getWeight());
 
 				GHPoint pp = map.getPosition(p);

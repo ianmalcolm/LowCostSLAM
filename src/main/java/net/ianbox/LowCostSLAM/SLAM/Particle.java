@@ -2,9 +2,9 @@ package net.ianbox.LowCostSLAM.SLAM;
 
 import net.ianbox.LowCostSLAM.GUI.Weighted;
 import net.ianbox.LowCostSLAM.map.PointOnEdge;
-import org.apache.log4j.Logger;
+import net.ianbox.LowCostSLAM.map.WeightedEdge;
 
-import com.graphhopper.util.EdgeIteratorState;
+import org.apache.log4j.Logger;
 
 public class Particle implements Weighted, PointOnEdge {
 
@@ -12,16 +12,18 @@ public class Particle implements Weighted, PointOnEdge {
 			.getLogger(Particle.class.getName());
 	public final static double DEFAULTWEIGHT = 1.0;
 
-	public final EdgeIteratorState edge;
+	public final int wayId;
+	public final int edgeId;
 	public final double weight;
 	public final double dist;
 
-	public Particle(EdgeIteratorState e, double r) {
-		this(e, r, DEFAULTWEIGHT);
+	public Particle(WeightedEdge we, double r) {
+		this(we.getWayId(), we.getEdgeId(), r, DEFAULTWEIGHT);
 	}
 
-	private Particle(EdgeIteratorState e, double r, double w) {
-		edge = e;
+	private Particle(final int way, final int edge, double r, double w) {
+		wayId = way;
+		edgeId = edge;
 		dist = r;
 		weight = w;
 	}
@@ -35,7 +37,7 @@ public class Particle implements Weighted, PointOnEdge {
 	}
 
 	public Particle setWeight(double w) {
-		return new Particle(edge, dist, w);
+		return new Particle(wayId, edgeId, dist, w);
 	}
 
 	public double getWeight() {
@@ -43,23 +45,20 @@ public class Particle implements Weighted, PointOnEdge {
 	}
 
 	@Override
-	public int getBaseNode() {
-		return edge.getBaseNode();
-	}
-
-	@Override
-	public int getAdjNode() {
-		return edge.getAdjNode();
-	}
-
-	@Override
-	public EdgeIteratorState getEdge() {
-		return edge;
-	}
-
-	@Override
 	public double getDist() {
 		return dist;
+	}
+
+	@Override
+	public int getWayId() {
+		// TODO Auto-generated method stub
+		return wayId;
+	}
+
+	@Override
+	public int getEdgeId() {
+		// TODO Auto-generated method stub
+		return edgeId;
 	}
 
 }

@@ -1,16 +1,32 @@
 package net.ianbox.LowCostSLAM.map;
 
-import com.graphhopper.util.EdgeIteratorState;
-
+import com.graphhopper.storage.index.QueryResult;
 import net.ianbox.LowCostSLAM.GUI.Weighted;
 
 public class SimpleWeightedEdge implements WeightedEdge {
 
-	public final EdgeIteratorState edge;
+	public final int wayId;
+	public final int edgeId;
 	public final double weight;
+	private static final double DEFAULTWEIGHT = 1.0;
 
-	public SimpleWeightedEdge(EdgeIteratorState e, double w) {
-		edge = e;
+	public SimpleWeightedEdge(QueryResult qr) {
+		this(qr, DEFAULTWEIGHT);
+	}
+
+	public SimpleWeightedEdge(QueryResult qr, double w) {
+		wayId = qr.getClosestEdge().getEdge();
+		if (qr.getSnappedPosition() == QueryResult.Position.EDGE) {
+			edgeId = qr.getWayIndex();
+		} else {
+			edgeId = qr.getWayIndex() - 1;
+		}
+		weight = w;
+	}
+
+	private SimpleWeightedEdge(final int wid, final int eid, final double w) {
+		wayId = wid;
+		edgeId = eid;
 		weight = w;
 	}
 
@@ -21,22 +37,18 @@ public class SimpleWeightedEdge implements WeightedEdge {
 
 	@Override
 	public Weighted setWeight(double w) {
-		return new SimpleWeightedEdge(edge, w);
+		return new SimpleWeightedEdge(wayId, edgeId, w);
 	}
 
 	@Override
-	public int getBaseNode() {
-		return edge.getBaseNode();
-	}
-
-	@Override
-	public int getAdjNode() {
-		return edge.getAdjNode();
-	}
-
-	@Override
-	public EdgeIteratorState getEdge() {
+	public int getWayId() {
 		// TODO Auto-generated method stub
-		return edge;
+		return wayId;
+	}
+
+	@Override
+	public int getEdgeId() {
+		// TODO Auto-generated method stub
+		return edgeId;
 	}
 }

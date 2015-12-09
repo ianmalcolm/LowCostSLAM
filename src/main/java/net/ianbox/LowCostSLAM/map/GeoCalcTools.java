@@ -26,8 +26,9 @@ public class GeoCalcTools extends DistancePlaneProjection {
 		assert edgeDist <= r_dist2d;
 		assert r_dist2d >= 0;
 
-		double factor = calcNormalizedDist(r_dist2d)
-				/ calcNormalizedDist(edgeDist);
+		// double factor = calcNormalizedDist(r_dist2d)
+		// / calcNormalizedDist(edgeDist);
+		double factor = r_dist2d / edgeDist;
 
 		// x,y is projection of r onto segment a-b
 		double c_lat = a_lat + factor * delta_lat;

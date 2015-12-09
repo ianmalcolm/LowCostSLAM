@@ -12,6 +12,7 @@ import com.graphhopper.storage.NodeAccess;
 import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.EdgeIteratorState;
+import com.graphhopper.util.PointList;
 import com.graphhopper.util.shapes.GHPoint;
 
 import org.apache.log4j.Logger;
@@ -49,62 +50,60 @@ public class GHMap {
 		return qrs;
 	}
 
-	public List<WeightedEdge> rangeSearch(GHPoint p, double range) {
+	public List<? extends WeightedEdge> rangeSearch(GHPoint p, double range) {
 		List<QueryResult> qrs = index.rangeSearch(p.lat, p.lon, range,
 				EdgeFilter.ALL_EDGES);
-		List<WeightedEdge> wes = new LinkedList<WeightedEdge>();
+		List<SimpleWeightedEdge> wes = new LinkedList<SimpleWeightedEdge>();
 		for (QueryResult qr : qrs) {
-			double w = calcEdgeLength(qr.getClosestEdge());
-			wes.add(new SimpleWeightedEdge(qr.getClosestEdge(), w));
+			double w = calcEdgeLength(new SimpleWeightedEdge(qr));
+			wes.add(new SimpleWeightedEdge(qr, w));
 		}
 		return wes;
 	}
 
-	@SuppressWarnings("unused")
-	private double calcEdgeLength(int id) {
-		EdgeIteratorState e = getEdge(id);
-		return calcEdgeLength(e);
+	private double calcEdgeLength(Edge edge) {
+		int wayId = edge.getWayId();
+		int edgeId = edge.getEdgeId();
+
+		GHPoint a = getNode(wayId, edgeId);
+		GHPoint b = getNode(wayId, edgeId + 1);
+
+		return tools.calcDist(a.lat, a.lon, b.lat, b.lon);
 	}
 
-	private double calcEdgeLength(EdgeIteratorState e) {
-		int a = e.getBaseNode();
-		int b = e.getAdjNode();
-		return calcEdgeLength(a, b);
-	}
-
-	private double calcEdgeLength(int a, int b) {
-		double a_lat = na.getLat(a);
-		double a_lon = na.getLon(a);
-		double b_lat = na.getLat(b);
-		double b_lon = na.getLon(b);
-		return tools.calcDist(a_lat, a_lon, b_lat, b_lon);
-	}
-
-	public GHPoint getPosition(int a, int b, double r) {
-		GHPoint pa = getNode(a);
-		GHPoint pb = getNode(b);
-
-		return tools.calcPointOnEdge(pa, pb, r);
+	public GHPoint getPosition(final GHPoint a, final GHPoint b, double r) {
+		return tools.calcPointOnEdge(a, b, r);
 	}
 
 	public static double calcDist(GHPoint p, GHPoint q) {
 		return tools.calcDist(p.lat, p.lon, q.lat, q.lon);
 	}
 
-	public GHPoint getNode(int id) {
+	public GHPoint getTowerNode(int id) {
 		double id_lat = na.getLat(id);
 		double id_lon = na.getLon(id);
 		return new GHPoint(id_lat, id_lon);
 	}
 
-	public EdgeIteratorState getEdge(int id) {
-		return graph.getEdgeIteratorState(id, -1);
+	public GHPoint getNode(int w, int e) {
+
+		EdgeIteratorState eis = graph.getEdgeIteratorState(w, Integer.MIN_VALUE);
+		PointList pointList = eis.fetchWayGeometry(3);
+		double lat = pointList.getLat(e);
+		double lon = pointList.getLon(e);
+
+		return new GHPoint(lat, lon);
+
 	}
 
 	public GHPoint getPosition(PointOnEdge poe) {
-		int base = poe.getBaseNode();
-		int adj = poe.getAdjNode();
+		int wayId = poe.getWayId();
+		int edgeId = poe.getEdgeId();
+
+		GHPoint a = getNode(wayId, edgeId);
+		GHPoint b = getNode(wayId, edgeId + 1);
+
 		double dist = poe.getDist();
-		return getPosition(base, adj, dist);
+		return getPosition(a, b, dist);
 	}
 }
