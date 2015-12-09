@@ -8,90 +8,148 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import net.ianbox.LowCostSLAM.GUI.ColoredWeightedWaypoint;
+import net.ianbox.LowCostSLAM.GUI.Weighted;
 import net.ianbox.LowCostSLAM.data.Data;
+import net.ianbox.LowCostSLAM.data.Reader;
+import net.ianbox.LowCostSLAM.map.GHMap;
+import net.ianbox.LowCostSLAM.map.WeightedEdge;
 
 import org.apache.log4j.Logger;
 
+import com.graphhopper.util.shapes.GHPoint;
+
 public class ParticleFilter implements Localizer {
 
+	public static final int MAXPARTICLENUMBER = 100;
 	private static final Logger log = Logger.getLogger(ParticleFilter.class
 			.getName());
-	private final BlockingQueue<List<Particle>> dq = new LinkedBlockingQueue<List<Particle>>();;
+	private final BlockingQueue<Set<ColoredWeightedWaypoint>> dq = new LinkedBlockingQueue<Set<ColoredWeightedWaypoint>>();;
+	private final Reader reader;
+	private final GHMap map;
+	private List<Particle> parts = null;
+	private final Random rand = new Random();
 
-	void sense() {
-
+	public ParticleFilter(Reader _reader, GHMap _map) {
+		reader = _reader;
+		map = _map;
 	}
 
 	/**
 	 * Resampling wheel algorithm from udacity
 	 * 
-	 * @param in
+	 * @param ins
 	 * @return
 	 */
-	static List<Particle> resampling(List<Particle> in) {
+	static List<? extends Weighted> resampling(List<? extends Weighted> ins,
+			int resamplingNumber) {
 
-		assert in.size() > 0;
+		assert ins.size() > 0;
 
 		double maxWeight = 0;
-		for (Particle p : in) {
-			if (maxWeight < p.weight) {
-				maxWeight = p.weight;
+		for (Weighted p : ins) {
+			if (maxWeight < p.getWeight()) {
+				maxWeight = p.getWeight();
 			}
 		}
 
-		List<Particle> out = new LinkedList<Particle>();
+		List<Weighted> outs = new LinkedList<Weighted>();
 
 		Random rand = new Random();
 		double beta = 0;
-		int index = rand.nextInt(in.size());
+		int index = rand.nextInt(ins.size());
 
-		for (int i = 0; i < in.size(); i++) {
+		for (int i = 0; i < resamplingNumber; i++) {
 			beta += rand.nextDouble() * 2 * maxWeight;
-			while (beta > in.get(index).weight) {
-				beta -= in.get(index).weight;
-				index = (index + 1) % in.size();
+			while (beta > ins.get(index).getWeight()) {
+				beta -= ins.get(index).getWeight();
+				index = (index + 1) % ins.size();
 			}
-			out.add(in.get(index));
+			outs.add(ins.get(index));
 		}
 
-		return out;
-
+		return outs;
 	}
 
 	/**
 	 * Normalize the weights of the particles
 	 * 
-	 * @param parts
+	 * @param ins
 	 * @return
 	 */
-	static List<Particle> normalize(List<Particle> parts) {
-		assert parts.size() > 0;
+	static List<Weighted> normalize(List<Weighted> ins) {
+		assert ins.size() > 0;
 
 		double totalWeight = 0;
-		for (Particle p : parts) {
-			totalWeight += p.weight;
+		for (Weighted p : ins) {
+			totalWeight += p.getWeight();
 		}
 
-		Set<Particle> deduplicates = new HashSet<Particle>();
-		deduplicates.addAll(parts);
-		for (Particle p : deduplicates) {
-			p = p.setWeight(p.weight / totalWeight);
+		List<Weighted> outs = new LinkedList<Weighted>();
+
+		for (Weighted p : ins) {
+			outs.add(p.setWeight(p.getWeight() / totalWeight));
 		}
 
-		return parts;
+		return outs;
 	}
 
 	public void run() {
-		// TODO Auto-generated method stub
-
+		while (true) {
+		}
 	}
 
-	public List<Particle> read() {
+	void sense() {
+
+		Data data = reader.read();
+		log.trace("Sensing data" + data.toString());
+	}
+
+	public Set<ColoredWeightedWaypoint> read() {
+
 		try {
-			return dq.take();
+			Set<ColoredWeightedWaypoint> partlist = dq.take();
+			return partlist;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 			return null;
 		}
+
+	}
+
+	public void proposeParticles(GHPoint gp, double accH, double accV, int num) {
+		parts = new LinkedList<Particle>();
+		List<WeightedEdge> welist = map.rangeSearch(gp, accH * 3);
+		List<Particle> plist = new LinkedList<Particle>();
+
+		while (plist.size() < num) {
+			@SuppressWarnings("unchecked")
+			List<WeightedEdge> tmplst = (List<WeightedEdge>) resampling(welist,
+					num - plist.size());
+			for (WeightedEdge we : tmplst) {
+				Particle p = new Particle(we.getEdge(), rand.nextDouble()
+						* we.getWeight());
+
+				GHPoint pp = map.getPosition(p);
+				if (GHMap.calcDist(pp, gp) > accH * 3) {
+					continue;
+				} else {
+					plist.add(p);
+				}
+			}
+		}
+		parts.addAll(plist);
+	}
+
+	public void measure() {
+
+	}
+
+	public void disp() {
+		Set<ColoredWeightedWaypoint> list = new HashSet<ColoredWeightedWaypoint>();
+		for (Particle p : parts) {
+			list.add(new ColoredParticle(map.getPosition(p)));
+		}
+		dq.add(list);
 	}
 }

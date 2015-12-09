@@ -1,26 +1,33 @@
 package net.ianbox.LowCostSLAM.SLAM;
 
-import net.ianbox.LowCostSLAM.map.GeoPosition;
-
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import net.ianbox.LowCostSLAM.GUI.Weighted;
+import net.ianbox.LowCostSLAM.map.PointOnEdge;
 import org.apache.log4j.Logger;
 
-public class Particle {
+import com.graphhopper.util.EdgeIteratorState;
 
-	public final double weight;
-	public final GeoPosition pos;
-	public final Vector3D velocity;
+public class Particle implements Weighted, PointOnEdge {
+
 	private static final Logger log = Logger
 			.getLogger(Particle.class.getName());
+	public final static double DEFAULTWEIGHT = 1.0;
 
-	public Particle(double w, GeoPosition p, Vector3D v) {
+	public final EdgeIteratorState edge;
+	public final double weight;
+	public final double dist;
+
+	public Particle(EdgeIteratorState e, double r) {
+		this(e, r, DEFAULTWEIGHT);
+	}
+
+	private Particle(EdgeIteratorState e, double r, double w) {
+		edge = e;
+		dist = r;
 		weight = w;
-		pos = p;
-		velocity = v;
 	}
 
 	void move() {
-
+		log.trace("Let's move!");
 	}
 
 	double probability() {
@@ -28,7 +35,31 @@ public class Particle {
 	}
 
 	public Particle setWeight(double w) {
-		return new Particle(w, pos, velocity);
+		return new Particle(edge, dist, w);
+	}
+
+	public double getWeight() {
+		return weight;
+	}
+
+	@Override
+	public int getBaseNode() {
+		return edge.getBaseNode();
+	}
+
+	@Override
+	public int getAdjNode() {
+		return edge.getAdjNode();
+	}
+
+	@Override
+	public EdgeIteratorState getEdge() {
+		return edge;
+	}
+
+	@Override
+	public double getDist() {
+		return dist;
 	}
 
 }

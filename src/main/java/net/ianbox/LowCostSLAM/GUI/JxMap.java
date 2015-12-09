@@ -1,24 +1,26 @@
 package net.ianbox.LowCostSLAM.GUI;
 
-import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import javax.swing.JFrame;
 import javax.swing.JToolTip;
+import javax.swing.SwingWorker;
 
 import net.ianbox.LowCostSLAM.SLAM.Localizer;
-import net.ianbox.LowCostSLAM.SLAM.Particle;
 
 import org.jxmapviewer.JXMapKit;
 import org.jxmapviewer.JXMapViewer;
 import org.jxmapviewer.OSMTileFactoryInfo;
+import org.jxmapviewer.painter.CompoundPainter;
+import org.jxmapviewer.painter.Painter;
 import org.jxmapviewer.viewer.DefaultTileFactory;
 import org.jxmapviewer.viewer.GeoPosition;
 import org.jxmapviewer.viewer.TileFactoryInfo;
@@ -37,11 +39,15 @@ public class JxMap extends JFrame implements Runnable {
 	 */
 	private static final long serialVersionUID = 4741213149608303867L;
 	private final JXMapKit jXMapKit = new JXMapKit();
+	@SuppressWarnings("unused")
 	private static final Logger log = Logger.getLogger(JxMap.class.getName());
 
-	private WaypointPainter<SimpleWaypoint> waypointPainter = null;
+	private WaypointPainter<ColoredWeightedWaypoint> waypointPainter = null;
+	private final Localizer localizer;
 
-	public JxMap(Localizer localizer) {
+	public JxMap(Localizer _localizer) {
+
+		localizer = _localizer;
 
 		TileFactoryInfo info = new OSMTileFactoryInfo();
 		DefaultTileFactory tileFactory = new DefaultTileFactory(info);
@@ -88,50 +94,58 @@ public class JxMap extends JFrame implements Runnable {
 			}
 		});
 
-		waypointPainter = new WaypointPainter<SimpleWaypoint>();
-		waypointPainter.setRenderer(new SimpleWaypointRenderer());
-		jXMapKit.getMainMap().setOverlayPainter(waypointPainter);
+		waypointPainter = new WaypointPainter<ColoredWeightedWaypoint>();
+		waypointPainter.setRenderer(new ColoredWeightedWaypointRenderer());
 
+		// There can be many painter for a map
+		List<Painter<JXMapViewer>> painters = new ArrayList<Painter<JXMapViewer>>();
+		painters.add(waypointPainter);
+
+		CompoundPainter<JXMapViewer> painter = new CompoundPainter<JXMapViewer>(
+				painters);
+
+		jXMapKit.getMainMap().setOverlayPainter(painter);
 
 		// Display the viewer in a JFrame
 
 		setTitle("JXMapviewer2 Example 6");
 		getContentPane().add(jXMapKit);
-		setExtendedState(getExtendedState() | JFrame.MAXIMIZED_BOTH);
+		setSize(800, 600);
+		// setExtendedState(getExtendedState() | JFrame.MAXIMIZED_BOTH);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		setVisible(true);
+
+		SwingWorker<Void, Set<ColoredWeightedWaypoint>> worker = new SwingWorker<Void, Set<ColoredWeightedWaypoint>>() {
+
+			@Override
+			protected Void doInBackground() throws Exception {
+				while (true) {
+					Set<ColoredWeightedWaypoint> wplist = localizer.read();
+					publish(wplist);
+				}
+			}
+
+			protected void process(List<Set<ColoredWeightedWaypoint>> wplist) {
+				setWaypoints(wplist.get(wplist.size() - 1));
+			}
+		};
+		worker.execute();
+
 	}
 
-	public void setParticles(List<Particle> particles) {
-		waypointPainter.setWaypoints(parts2waypoints(particles));
-	}
-
-	public void setParticles() {
-		setParticles(new HashSet<SimpleWaypoint>());
-		jXMapKit.repaint();
-	}
-
-	private static SimpleWaypoint part2waypoint(Particle p, Color color) {
-		return new SimpleWaypoint(p.weight, color, new GeoPosition(p.pos.lat,
-				p.pos.lon));
-	}
-
-	private static Set<SimpleWaypoint> parts2waypoints(List<Particle> particles) {
-		Set<SimpleWaypoint> waypoints = new HashSet<SimpleWaypoint>();
-		for (Particle p : particles) {
-			waypoints.add(part2waypoint(p, Color.RED));
-		}
-		return waypoints;
-	}
-
-	public void setParticles(Set<SimpleWaypoint> waypoints) {
+	public void setWaypoints(Set<ColoredWeightedWaypoint> waypoints) {
 		waypointPainter.setWaypoints(waypoints);
 		jXMapKit.repaint();
 	}
 
+	public void setWaypoints() {
+		setWaypoints(new HashSet<ColoredWeightedWaypoint>());
+		jXMapKit.repaint();
+	}
+
 	public void run() {
-		// TODO Auto-generated method stub
 
 	}
+
 }

@@ -1,9 +1,11 @@
 package net.ianbox.LowCostSLAM.SLAM;
 
-import java.util.List;
+import java.util.Set;
+
+import net.ianbox.LowCostSLAM.GUI.ColoredWeightedWaypoint;
 
 public interface Localizer extends Runnable {
 
-	public List<Particle> read();
+	public Set<ColoredWeightedWaypoint> read();
 
 }
