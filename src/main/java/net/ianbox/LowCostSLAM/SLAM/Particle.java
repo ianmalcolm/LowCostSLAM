@@ -1,6 +1,7 @@
 package net.ianbox.LowCostSLAM.SLAM;
 
 import net.ianbox.LowCostSLAM.GUI.Weighted;
+import net.ianbox.LowCostSLAM.map.Edge;
 import net.ianbox.LowCostSLAM.map.PointOnEdge;
 import net.ianbox.LowCostSLAM.map.WeightedEdge;
 
@@ -13,17 +14,19 @@ public class Particle implements Weighted, PointOnEdge {
 	public final static double DEFAULTWEIGHT = 1.0;
 
 	public final int wayId;
-	public final int edgeId;
+	public final int startNodeId;
+	public final int endNodeId;
 	public final double weight;
 	public final double dist;
 
 	public Particle(WeightedEdge we, double r) {
-		this(we.getWayId(), we.getEdgeId(), r, DEFAULTWEIGHT);
+		this(we, r, we.getWeight());
 	}
 
-	private Particle(final int way, final int edge, double r, double w) {
-		wayId = way;
-		edgeId = edge;
+	private Particle(final Edge edge, double r, double w) {
+		wayId = edge.getWayId();
+		startNodeId = edge.getStartNodeId();
+		endNodeId = edge.getEndNodeId();
 		dist = r;
 		weight = w;
 	}
@@ -37,7 +40,7 @@ public class Particle implements Weighted, PointOnEdge {
 	}
 
 	public Particle setWeight(double w) {
-		return new Particle(wayId, edgeId, dist, w);
+		return new Particle(this, dist, w);
 	}
 
 	public double getWeight() {
@@ -51,14 +54,18 @@ public class Particle implements Weighted, PointOnEdge {
 
 	@Override
 	public int getWayId() {
-		// TODO Auto-generated method stub
 		return wayId;
 	}
 
 	@Override
-	public int getEdgeId() {
-		// TODO Auto-generated method stub
-		return edgeId;
+	public int getStartNodeId() {
+		return startNodeId;
 	}
+
+	@Override
+	public int getEndNodeId() {
+		return endNodeId;
+	}
+
 
 }

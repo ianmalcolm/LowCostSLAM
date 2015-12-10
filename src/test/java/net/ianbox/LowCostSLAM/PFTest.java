@@ -16,13 +16,14 @@ import net.ianbox.LowCostSLAM.GUI.JxMap;
 import net.ianbox.LowCostSLAM.SLAM.ColoredParticle;
 import net.ianbox.LowCostSLAM.SLAM.Particle;
 import net.ianbox.LowCostSLAM.SLAM.ParticleFilter;
+import net.ianbox.LowCostSLAM.map.Edge;
 import net.ianbox.LowCostSLAM.map.GHMap;
 import net.ianbox.LowCostSLAM.map.SimpleWeightedEdge;
 import net.ianbox.LowCostSLAM.map.WeightedEdge;
 
 public class PFTest {
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void initializeParticlesTest() {
 		GHMap ghmap = new GHMap("map/malaysia-singapore-brunei-latest.osm.pbf");
@@ -31,12 +32,13 @@ public class PFTest {
 		EventQueue.invokeLater(jxmap);
 
 		GHPoint gp = new GHPoint(1.298183, 103.788152);
-		while (true) {
-			pf.proposeParticles(gp, 100, 1, 100);
+		int cnt = 0;
+		while (cnt++ < 1e2) {
+			pf.proposeParticles(gp, 100, 1, 500);
 			// pf.measure();
 			pf.disp();
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -44,6 +46,7 @@ public class PFTest {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void pointOnEdge() {
 		GHMap map = new GHMap("map/malaysia-singapore-brunei-latest.osm.pbf");
@@ -52,16 +55,21 @@ public class PFTest {
 		JxMap jxmap = new JxMap(null);
 		EventQueue.invokeLater(jxmap);
 
-		List<SimpleWeightedEdge> welist = (List<SimpleWeightedEdge>) map
-				.rangeSearch(gp, 100 * 3);
+		List<Edge> edges = (List<Edge>) map.enumerateEdges(gp, 100 * 3);
+		List<WeightedEdge> weightedEdges = new LinkedList<WeightedEdge>();
+		for (Edge edge : edges) {
+			weightedEdges.add(map.createWeightedEdge(edge));
+		}
+
 		List<Particle> plist = new LinkedList<Particle>();
 
 		int num = 1;
 
-		while (true) {
+		int cnt = 0;
+		while (cnt++ < 10) {
 			@SuppressWarnings("unchecked")
 			List<WeightedEdge> tmplst = (List<WeightedEdge>) ParticleFilter
-					.resampling(welist, num);
+					.resampling(weightedEdges, num);
 			plist.clear();
 			for (WeightedEdge we : tmplst) {
 				Particle ps = new Particle(we, 0.0 * we.getWeight());

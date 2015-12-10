@@ -24,13 +24,13 @@ public class GHMap {
 	private final NodeAccess na;
 	private final LocationIndexXSearch index;
 	private static final CarFlagEncoder encoder = new CarFlagEncoder(5, 5, 1);
-	@SuppressWarnings("unused")
 	private static final Logger log = Logger.getLogger(GHMap.class.getName());
 
 	private static final GeoCalcTools tools = new GeoCalcTools();
 
 	public GHMap(String osmfile) {
 
+		log.trace("Initializing GraphHpooer map...");
 		hopper.setOSMFile(osmfile);
 		hopper.setGraphHopperLocation("graphFolder");
 		hopper.setEncodingManager(new EncodingManager(encoder));
@@ -44,29 +44,60 @@ public class GHMap {
 				(LocationIndexTree) hopper.getLocationIndex());
 	}
 
-	public List<QueryResult> findkClosest(GHPoint p, int k) {
-		List<QueryResult> qrs = index.findkClosest(p.lat, p.lon, k,
-				EdgeFilter.ALL_EDGES);
-		return qrs;
-	}
-
-	public List<? extends WeightedEdge> rangeSearch(GHPoint p, double range) {
+	public List<Edge> enumerateEdges(GHPoint p, double range) {
 		List<QueryResult> qrs = index.rangeSearch(p.lat, p.lon, range,
 				EdgeFilter.ALL_EDGES);
-		List<SimpleWeightedEdge> wes = new LinkedList<SimpleWeightedEdge>();
+		List<Edge> wes = new LinkedList<Edge>();
 		for (QueryResult qr : qrs) {
-			double w = calcEdgeLength(new SimpleWeightedEdge(qr));
-			wes.add(new SimpleWeightedEdge(qr, w));
+			EdgeIteratorState eis = qr.getClosestEdge();
+			int wayId = eis.getEdge();
+			int waySize = eis.fetchWayGeometry(2).getSize();
+			for (int i = 0; i < waySize; i++) {
+				SimpleEdge edge = new SimpleEdge(wayId, i);
+				double dist = calcPointToEdgeMinDist(p, edge);
+				if (dist < range) {
+					wes.add(edge);
+				}
+			}
 		}
 		return wes;
 	}
 
-	private double calcEdgeLength(Edge edge) {
-		int wayId = edge.getWayId();
-		int edgeId = edge.getEdgeId();
+	public WeightedEdge createWeightedEdge(Edge edge) {
+		double length = calcEdgeLength(edge);
+		SimpleWeightedEdge swe = new SimpleWeightedEdge(edge, length);
+		return swe;
+	}
 
-		GHPoint a = getNode(wayId, edgeId);
-		GHPoint b = getNode(wayId, edgeId + 1);
+	private double calcPointToEdgeMinDist(GHPoint p, Edge edge) {
+		int wayId = edge.getWayId();
+		GHPoint a = getNode(wayId, edge.getStartNodeId());
+		GHPoint b = getNode(wayId, edge.getEndNodeId());
+
+		if (tools.validEdgeDistance(p.lat, p.lon, a.lat, a.lon, b.lat, b.lon)) {
+			double normalizedDist = tools.calcNormalizedEdgeDistance(p.lat,
+					p.lon, a.lat, a.lon, b.lat, b.lon);
+			double dist = tools.calcDenormalizedDist(normalizedDist);
+			return dist;
+		} else {
+			double normDist2a = tools.calcNormalizedDist(p.lat, p.lon, a.lat,
+					a.lon);
+			double normDist2b = tools.calcNormalizedDist(p.lat, p.lon, b.lat,
+					b.lon);
+			if (normDist2a > normDist2b) {
+				double distb = tools.calcDenormalizedDist(normDist2b);
+				return distb;
+			} else {
+				double dista = tools.calcDenormalizedDist(normDist2a);
+				return dista;
+			}
+		}
+	}
+
+	public double calcEdgeLength(Edge edge) {
+		int wayId = edge.getWayId();
+		GHPoint a = getNode(wayId, edge.getStartNodeId());
+		GHPoint b = getNode(wayId, edge.getEndNodeId());
 
 		return tools.calcDist(a.lat, a.lon, b.lat, b.lon);
 	}
@@ -79,15 +110,10 @@ public class GHMap {
 		return tools.calcDist(p.lat, p.lon, q.lat, q.lon);
 	}
 
-	public GHPoint getTowerNode(int id) {
-		double id_lat = na.getLat(id);
-		double id_lon = na.getLon(id);
-		return new GHPoint(id_lat, id_lon);
-	}
-
 	public GHPoint getNode(int w, int e) {
 
-		EdgeIteratorState eis = graph.getEdgeIteratorState(w, Integer.MIN_VALUE);
+		EdgeIteratorState eis = graph
+				.getEdgeIteratorState(w, Integer.MIN_VALUE);
 		PointList pointList = eis.fetchWayGeometry(3);
 		double lat = pointList.getLat(e);
 		double lon = pointList.getLon(e);
@@ -98,10 +124,8 @@ public class GHMap {
 
 	public GHPoint getPosition(PointOnEdge poe) {
 		int wayId = poe.getWayId();
-		int edgeId = poe.getEdgeId();
-
-		GHPoint a = getNode(wayId, edgeId);
-		GHPoint b = getNode(wayId, edgeId + 1);
+		GHPoint a = getNode(wayId, poe.getStartNodeId());
+		GHPoint b = getNode(wayId, poe.getEndNodeId());
 
 		double dist = poe.getDist();
 		return getPosition(a, b, dist);

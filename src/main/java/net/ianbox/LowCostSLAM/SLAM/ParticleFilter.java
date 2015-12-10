@@ -12,6 +12,7 @@ import net.ianbox.LowCostSLAM.GUI.ColoredWeightedWaypoint;
 import net.ianbox.LowCostSLAM.GUI.Weighted;
 import net.ianbox.LowCostSLAM.data.Data;
 import net.ianbox.LowCostSLAM.data.Reader;
+import net.ianbox.LowCostSLAM.map.Edge;
 import net.ianbox.LowCostSLAM.map.GHMap;
 import net.ianbox.LowCostSLAM.map.WeightedEdge;
 
@@ -120,13 +121,19 @@ public class ParticleFilter implements Localizer {
 
 	public void proposeParticles(GHPoint gp, double accH, double accV, int num) {
 		parts = new LinkedList<Particle>();
-		List<? extends WeightedEdge> welist = map.rangeSearch(gp, accH * 3);
+
+		List<Edge> edges = map.enumerateEdges(gp, accH * 3);
+		List<WeightedEdge> weightedEdges = new LinkedList<WeightedEdge>();
+		for (Edge edge : edges) {
+			weightedEdges.add(map.createWeightedEdge(edge));
+		}
+
 		List<Particle> plist = new LinkedList<Particle>();
 
 		while (plist.size() < num) {
 			@SuppressWarnings("unchecked")
-			List<WeightedEdge> tmplst = (List<WeightedEdge>) resampling(welist,
-					num - plist.size());
+			List<WeightedEdge> tmplst = (List<WeightedEdge>) resampling(
+					weightedEdges, num - plist.size());
 			for (WeightedEdge we : tmplst) {
 				Particle p = new Particle(we, rand.nextDouble()
 						* we.getWeight());
