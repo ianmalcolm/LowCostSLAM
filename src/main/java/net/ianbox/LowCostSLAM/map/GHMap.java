@@ -8,7 +8,6 @@ import com.graphhopper.routing.util.CarFlagEncoder;
 import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.storage.GraphHopperStorage;
-import com.graphhopper.storage.NodeAccess;
 import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.EdgeIteratorState;
@@ -21,7 +20,6 @@ public class GHMap {
 
 	private final GraphHopper hopper = new GraphHopper().forDesktop();
 	private final GraphHopperStorage graph;
-	private final NodeAccess na;
 	private final LocationIndexXSearch index;
 	private static final CarFlagEncoder encoder = new CarFlagEncoder(5, 5, 1);
 	private static final Logger log = Logger.getLogger(GHMap.class.getName());
@@ -39,7 +37,6 @@ public class GHMap {
 
 		graph = hopper.getGraphHopperStorage();
 
-		na = graph.getNodeAccess();
 		index = new LocationIndexXSearch(graph,
 				(LocationIndexTree) hopper.getLocationIndex());
 	}
@@ -51,9 +48,10 @@ public class GHMap {
 		for (QueryResult qr : qrs) {
 			EdgeIteratorState eis = qr.getClosestEdge();
 			int wayId = eis.getEdge();
+			int adjId = eis.getAdjNode();
 			int waySize = eis.fetchWayGeometry(2).getSize();
 			for (int i = 0; i < waySize; i++) {
-				SimpleEdge edge = new SimpleEdge(wayId, i);
+				SimpleEdge edge = new SimpleEdge(wayId, adjId, i);
 				double dist = calcPointToEdgeMinDist(p, edge);
 				if (dist < range) {
 					wes.add(edge);
@@ -70,9 +68,10 @@ public class GHMap {
 	}
 
 	private double calcPointToEdgeMinDist(GHPoint p, Edge edge) {
-		int wayId = edge.getWayId();
-		GHPoint a = getNode(wayId, edge.getStartNodeId());
-		GHPoint b = getNode(wayId, edge.getEndNodeId());
+		final int wayId = edge.getWayId();
+		final int adjId = edge.getAdjNodeId();
+		GHPoint a = getNode(wayId, adjId, edge.getStartNodeId());
+		GHPoint b = getNode(wayId, adjId, edge.getEndNodeId());
 
 		if (tools.validEdgeDistance(p.lat, p.lon, a.lat, a.lon, b.lat, b.lon)) {
 			double normalizedDist = tools.calcNormalizedEdgeDistance(p.lat,
@@ -95,9 +94,10 @@ public class GHMap {
 	}
 
 	public double calcEdgeLength(Edge edge) {
-		int wayId = edge.getWayId();
-		GHPoint a = getNode(wayId, edge.getStartNodeId());
-		GHPoint b = getNode(wayId, edge.getEndNodeId());
+		final int wayId = edge.getWayId();
+		final int adjId = edge.getAdjNodeId();
+		GHPoint a = getNode(wayId, adjId, edge.getStartNodeId());
+		GHPoint b = getNode(wayId, adjId, edge.getEndNodeId());
 
 		return tools.calcDist(a.lat, a.lon, b.lat, b.lon);
 	}
@@ -110,22 +110,22 @@ public class GHMap {
 		return tools.calcDist(p.lat, p.lon, q.lat, q.lon);
 	}
 
-	public GHPoint getNode(int w, int e) {
+	public GHPoint getNode(final int wayId, final int adjId, final int edgeId) {
 
-		EdgeIteratorState eis = graph
-				.getEdgeIteratorState(w, Integer.MIN_VALUE);
+		EdgeIteratorState eis = graph.getEdgeIteratorState(wayId, adjId);
 		PointList pointList = eis.fetchWayGeometry(3);
-		double lat = pointList.getLat(e);
-		double lon = pointList.getLon(e);
+		double lat = pointList.getLat(edgeId);
+		double lon = pointList.getLon(edgeId);
 
 		return new GHPoint(lat, lon);
 
 	}
 
 	public GHPoint getPosition(PointOnEdge poe) {
-		int wayId = poe.getWayId();
-		GHPoint a = getNode(wayId, poe.getStartNodeId());
-		GHPoint b = getNode(wayId, poe.getEndNodeId());
+		final int wayId = poe.getWayId();
+		final int adjId = poe.getAdjNodeId();
+		GHPoint a = getNode(wayId, adjId, poe.getStartNodeId());
+		GHPoint b = getNode(wayId, adjId, poe.getEndNodeId());
 
 		double dist = poe.getDist();
 		return getPosition(a, b, dist);

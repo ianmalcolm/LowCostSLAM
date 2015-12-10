@@ -18,7 +18,6 @@ import net.ianbox.LowCostSLAM.SLAM.Particle;
 import net.ianbox.LowCostSLAM.SLAM.ParticleFilter;
 import net.ianbox.LowCostSLAM.map.Edge;
 import net.ianbox.LowCostSLAM.map.GHMap;
-import net.ianbox.LowCostSLAM.map.SimpleWeightedEdge;
 import net.ianbox.LowCostSLAM.map.WeightedEdge;
 
 public class PFTest {

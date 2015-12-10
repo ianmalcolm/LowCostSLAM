@@ -14,8 +14,8 @@ public class Particle implements Weighted, PointOnEdge {
 	public final static double DEFAULTWEIGHT = 1.0;
 
 	public final int wayId;
+	public final int adjId;
 	public final int startNodeId;
-	public final int endNodeId;
 	public final double weight;
 	public final double dist;
 
@@ -25,8 +25,8 @@ public class Particle implements Weighted, PointOnEdge {
 
 	private Particle(final Edge edge, double r, double w) {
 		wayId = edge.getWayId();
+		adjId = edge.getAdjNodeId();
 		startNodeId = edge.getStartNodeId();
-		endNodeId = edge.getEndNodeId();
 		dist = r;
 		weight = w;
 	}
@@ -64,8 +64,12 @@ public class Particle implements Weighted, PointOnEdge {
 
 	@Override
 	public int getEndNodeId() {
-		return endNodeId;
+		return startNodeId + 1;
 	}
 
+	@Override
+	public int getAdjNodeId() {
+		return adjId;
+	}
 
 }
