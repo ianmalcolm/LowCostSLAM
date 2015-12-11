@@ -16,6 +16,7 @@ import net.ianbox.LowCostSLAM.map.Edge;
 import net.ianbox.LowCostSLAM.map.GHMap;
 import net.ianbox.LowCostSLAM.map.WeightedEdge;
 
+import org.apache.commons.math3.analysis.function.Gaussian;
 import org.apache.log4j.Logger;
 
 import com.graphhopper.util.shapes.GHPoint;
@@ -29,7 +30,7 @@ public class ParticleFilter implements Localizer {
 	private final Reader reader;
 	private final GHMap map;
 	private List<Particle> parts = null;
-	private final Random rand = new Random();
+	private static final Random rand = new Random();
 
 	public ParticleFilter(Reader _reader, GHMap _map) {
 		reader = _reader;
@@ -119,7 +120,7 @@ public class ParticleFilter implements Localizer {
 
 	}
 
-	public void proposeParticles(GHPoint gp, double accH, double accV, int num) {
+	public void proposeParticles(GHPoint gp, double accH, int num) {
 		parts = new LinkedList<Particle>();
 
 		List<Edge> edges = map.enumerateEdges(gp, accH * 3);
@@ -128,29 +129,45 @@ public class ParticleFilter implements Localizer {
 			weightedEdges.add(map.createWeightedEdge(edge));
 		}
 
-		List<Particle> plist = new LinkedList<Particle>();
+		List<Particle> uniPlist = new LinkedList<Particle>();
 
-		while (plist.size() < num) {
-			@SuppressWarnings("unchecked")
+		int uniformedNum = num*10;
+		while (uniPlist.size() < uniformedNum) {
+			
 			List<WeightedEdge> tmplst = (List<WeightedEdge>) resampling(
-					weightedEdges, num - plist.size());
+					weightedEdges, uniformedNum - uniPlist.size());
+			
 			for (WeightedEdge we : tmplst) {
 				Particle p = new Particle(we, rand.nextDouble()
 						* we.getWeight());
-
 				GHPoint pp = map.getPosition(p);
 				if (GHMap.calcDist(pp, gp) > accH * 3) {
 					continue;
 				} else {
-					plist.add(p);
+					uniPlist.add(p);
 				}
 			}
 		}
-		parts.addAll(plist);
+
+		Gaussian gaussian = new Gaussian(0, accH);
+		List<Particle> gauPlist = new LinkedList<Particle>();
+		for (Particle p : uniPlist) {
+			double dist = GHMap.calcDist(map.getPosition(p), gp);
+			p = p.setWeight(gaussian.value(dist));
+			gauPlist.add(p);
+		}
+		
+		gauPlist = (List<Particle>) resampling(gauPlist, num);
+
+		parts.addAll(gauPlist);
 	}
 
 	public void measure() {
 
+	}
+	
+	public void move(){
+		
 	}
 
 	public void disp() {

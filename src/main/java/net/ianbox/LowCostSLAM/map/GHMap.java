@@ -16,12 +16,12 @@ import com.graphhopper.util.shapes.GHPoint;
 
 import org.apache.log4j.Logger;
 
-public class GHMap {
+public class GHMap implements Map{
 
 	private final GraphHopper hopper = new GraphHopper().forDesktop();
 	private final GraphHopperStorage graph;
 	private final LocationIndexXSearch index;
-	private static final CarFlagEncoder encoder = new CarFlagEncoder(5, 5, 1);
+	public static final CarFlagEncoder ENCODER = new CarFlagEncoder(5, 5, 1);
 	private static final Logger log = Logger.getLogger(GHMap.class.getName());
 
 	private static final GeoCalcTools tools = new GeoCalcTools();
@@ -31,7 +31,7 @@ public class GHMap {
 		log.trace("Initializing GraphHpooer map...");
 		hopper.setOSMFile(osmfile);
 		hopper.setGraphHopperLocation("graphFolder");
-		hopper.setEncodingManager(new EncodingManager(encoder));
+		hopper.setEncodingManager(new EncodingManager(ENCODER));
 		hopper.setCHEnable(false);
 		hopper.importOrLoad();
 
@@ -47,14 +47,27 @@ public class GHMap {
 		List<Edge> wes = new LinkedList<Edge>();
 		for (QueryResult qr : qrs) {
 			EdgeIteratorState eis = qr.getClosestEdge();
-			int wayId = eis.getEdge();
-			int adjId = eis.getAdjNode();
-			int waySize = eis.fetchWayGeometry(2).getSize();
-			for (int i = 0; i < waySize; i++) {
-				SimpleEdge edge = new SimpleEdge(wayId, adjId, i);
-				double dist = calcPointToEdgeMinDist(p, edge);
-				if (dist < range) {
-					wes.add(edge);
+
+			int waySize = eis.fetchWayGeometry(3).getSize();
+
+			if (eis.isForward(ENCODER)) {
+				for (int i = 0; i < waySize - 1; i++) {
+					SimpleEdge edge = new SimpleEdge(eis, i);
+					double dist = calcPointToEdgeMinDist(p, edge);
+					if (dist < range) {
+						wes.add(edge);
+					}
+				}
+			}
+
+			if (eis.isBackward(ENCODER)) {
+				eis = eis.detach(true);
+				for (int i = 0; i < waySize - 1; i++) {
+					SimpleEdge edge = new SimpleEdge(eis, i);
+					double dist = calcPointToEdgeMinDist(p, edge);
+					if (dist < range) {
+						wes.add(edge);
+					}
 				}
 			}
 		}

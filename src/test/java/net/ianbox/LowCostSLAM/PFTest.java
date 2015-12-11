@@ -33,7 +33,7 @@ public class PFTest {
 		GHPoint gp = new GHPoint(1.298183, 103.788152);
 		int cnt = 0;
 		while (cnt++ < 1e2) {
-			pf.proposeParticles(gp, 100, 1, 500);
+			pf.proposeParticles(gp, 100, 500);
 			// pf.measure();
 			pf.disp();
 			try {

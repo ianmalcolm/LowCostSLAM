@@ -6,12 +6,6 @@ public class SimpleWeightedEdge extends SimpleEdge implements WeightedEdge {
 	public final double weight;
 	private static final double DEFAULTWEIGHT = 1.0;
 
-	public SimpleWeightedEdge(final int wid, final int aid, final int eid,
-			double w) {
-		super(wid, aid, eid);
-		weight = w;
-	}
-
 	public SimpleWeightedEdge(Edge edge, double w) {
 		super(edge);
 		weight = w;

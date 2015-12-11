@@ -1,14 +1,36 @@
 package net.ianbox.LowCostSLAM.map;
 
+import org.apache.log4j.Logger;
+
+import com.graphhopper.util.EdgeIteratorState;
+
 public class SimpleEdge implements Edge {
 
 	public final int wayId;
 	public final int adjId;
 	public final int edgeId;
+	public final boolean biDirect;
 
-	public SimpleEdge(final int way, final int adj, final int e) {
-		wayId = way;
-		adjId = adj;
+	private static final Logger log = Logger.getLogger(SimpleEdge.class
+			.getName());
+
+	public SimpleEdge(EdgeIteratorState edge, final int e) {
+		wayId = edge.getEdge();
+		if (!edge.isForward(GHMap.ENCODER)) {
+			if (edge.isBackward(GHMap.ENCODER)) {
+				edge = edge.detach(true);
+			} else {
+				log.fatal("Way " + edge.getName()
+						+ " is not accessible in either directions!");
+			}
+		}
+
+		if (edge.isForward(GHMap.ENCODER) && edge.isBackward(GHMap.ENCODER)) {
+			biDirect = true;
+		} else {
+			biDirect = false;
+		}
+		adjId = edge.getAdjNode();
 		edgeId = e;
 	}
 
@@ -16,6 +38,7 @@ public class SimpleEdge implements Edge {
 		wayId = edge.getWayId();
 		adjId = edge.getAdjNodeId();
 		edgeId = edge.getStartNodeId();
+		biDirect = edge.isBiDirect();
 	}
 
 	@Override
@@ -36,6 +59,11 @@ public class SimpleEdge implements Edge {
 	@Override
 	public int getAdjNodeId() {
 		return adjId;
+	}
+
+	@Override
+	public boolean isBiDirect() {
+		return biDirect;
 	}
 
 }
